@@ -68,7 +68,7 @@ export default function Navbar() {
               Login
             </Link>
             <Link
-              href="/register"
+              href="/"
               style={{
                 fontSize: '14px',
                 fontWeight: 600,
@@ -119,7 +119,7 @@ export default function Navbar() {
             <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '10px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#1A1A2E', textDecoration: 'none' }}>
               Login
             </Link>
-            <Link href="/register" style={{ flex: 1, textAlign: 'center', padding: '10px', background: '#4F46E5', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'white', textDecoration: 'none' }}>
+            <Link href="/" style={{ flex: 1, textAlign: 'center', padding: '10px', background: '#4F46E5', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'white', textDecoration: 'none' }}>
               Sign Up
             </Link>
           </div>

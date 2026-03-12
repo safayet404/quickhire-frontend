@@ -12,7 +12,7 @@ export default function Navbar() {
 
   const links = [
     { href: '/jobs', label: 'Find Jobs' },
-    { href: '/jobs', label: 'Browse Companies' },
+    { href: '/', label: 'Browse Companies' },
     { href: '/admin', label: 'Admin' },
   ];
 

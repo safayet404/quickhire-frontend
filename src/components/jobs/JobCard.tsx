@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { MapPin, Clock, Users, DollarSign } from 'lucide-react';
 import { Job, JOB_TYPES, JOB_TYPE_COLORS } from '@/types';
 import { formatSalary, formatDate, getCompanyInitials, getCompanyColor } from '@/lib/utils';
 
@@ -8,66 +7,110 @@ interface JobCardProps {
   featured?: boolean;
 }
 
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  Marketing: { bg: '#FFF7ED', text: '#C2621B', border: '#FDE68A' },
+  Design: { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0' },
+  Business: { bg: '#EFF6FF', text: '#1D4ED8', border: '#BFDBFE' },
+  Technology: { bg: '#FDF4FF', text: '#7E22CE', border: '#E9D5FF' },
+  Finance: { bg: '#ECFDF5', text: '#065F46', border: '#A7F3D0' },
+  'Human Resource': { bg: '#FFF1F2', text: '#BE123C', border: '#FECDD3' },
+};
+
 export default function JobCard({ job, featured }: JobCardProps) {
   const typeLabel = JOB_TYPES[job.type] || job.type;
-  const typeColor = JOB_TYPE_COLORS[job.type] || 'bg-gray-50 text-gray-700';
+  const catStyle = CATEGORY_COLORS[job.category] ?? { bg: '#F9FAFB', text: '#374151', border: '#E5E7EB' };
 
   return (
-    <Link href={`/jobs/${job.id}`}>
-      <div className={`card h-full flex flex-col gap-4 cursor-pointer group ${featured ? 'border-primary/20' : ''}`}>
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {/* Company avatar */}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${getCompanyColor(job.company)}`}>
-              {getCompanyInitials(job.company)}
-            </div>
-            <div>
-              <p className="font-semibold text-sm text-gray-900 group-hover:text-primary transition-colors">{job.company}</p>
-              <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
-                <MapPin size={11} />
-                <span>{job.location}</span>
-              </div>
-            </div>
+    <Link href={`/jobs/${job.id}`} style={{ textDecoration: 'none' }}>
+      <div
+        style={{
+          background: 'white',
+          border: `1px solid ${featured ? '#C7D2FE' : '#F0F0F5'}`,
+          borderRadius: '16px',
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          cursor: 'pointer',
+          height: '100%',
+          transition: 'box-shadow 0.2s',
+        }}
+        className="hover:shadow-md"
+      >
+        {/* Row 1: Logo + Type badge */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${getCompanyColor(job.company)}`}>
+            {getCompanyInitials(job.company)}
           </div>
-
-          {/* Type badge */}
-          <span className={`badge flex-shrink-0 ${typeColor}`}>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: 500,
+            padding: '4px 12px',
+            borderRadius: '6px',
+            border: '1.5px solid #4F46E5',
+            color: '#4F46E5',
+            background: 'white',
+            whiteSpace: 'nowrap',
+          }}>
             {typeLabel}
           </span>
         </div>
 
-        {/* Title */}
-        <div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors leading-snug">
-            {job.title}
-          </h3>
-          <span className="inline-block mt-1 text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">
-            {job.category}
-          </span>
+        {/* Row 2: Title */}
+        <div style={{ fontWeight: 700, fontSize: '15px', color: '#1A1A2E', lineHeight: 1.3 }}>
+          {job.title}
         </div>
 
-        {/* Description snippet */}
-        <p className="text-sm text-gray-500 line-clamp-2 flex-1">{job.description}</p>
+        {/* Row 3: Company • Location */}
+        <div style={{ fontSize: '13px', color: '#9CA3AF' }}>
+          {job.company}
+          {job.location ? (
+            <span> &nbsp;·&nbsp; {job.location}</span>
+          ) : null}
+        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-50 text-xs text-gray-400">
-          <div className="flex items-center gap-1">
-            <DollarSign size={12} />
-            <span>{formatSalary(job.salary_min, job.salary_max)}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {job.applications_count !== undefined && (
-              <span className="flex items-center gap-1">
-                <Users size={12} />
-                {job.applications_count}
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <Clock size={12} />
-              {formatDate(job.created_at)}
-            </span>
-          </div>
+        {/* Row 4: Description */}
+        <p style={{
+          fontSize: '13px',
+          color: '#6B7280',
+          lineHeight: 1.6,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          margin: 0,
+          flex: 1,
+        }}>
+          {job.company} is looking for {job.title} {job.description?.slice(0, 60)}...
+        </p>
+
+        {/* Row 5: Category tag pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+          {/* Job type pill */}
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            padding: '3px 10px',
+            borderRadius: '999px',
+            background: '#FFF7ED',
+            color: '#C2621B',
+            border: '1px solid #FDE68A',
+          }}>
+            {typeLabel}
+          </span>
+
+          {/* Category pill */}
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            padding: '3px 10px',
+            borderRadius: '999px',
+            background: catStyle.bg,
+            color: catStyle.text,
+            border: `1px solid ${catStyle.border}`,
+          }}>
+            {job.category}
+          </span>
         </div>
       </div>
     </Link>

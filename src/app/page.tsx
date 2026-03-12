@@ -8,6 +8,7 @@ import { ArrowRight, Search, MapPin, Bell, LayoutDashboard, MessageSquare, Build
 import JobCard from '@/components/jobs/JobCard';
 import { getFeaturedJobs, getCategories } from '@/lib/api';
 import { Job, Category, JOB_CATEGORIES } from '@/types';
+import CategorySection from '@/components/jobs/CategorySection';
 
 export default function HomePage() {
   const router = useRouter();
@@ -111,29 +112,9 @@ export default function HomePage() {
       </section>
 
       {/* ── EXPLORE BY CATEGORY ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1A1A2E' }}>Explore by <span style={{ color: '#26A4FF' }}>category</span></h2>
-            <p style={{ color: '#9CA3AF', fontSize: '14px', marginTop: '4px' }}>Browse jobs in your area of expertise</p>
-          </div>
-          <Link href="/jobs" className="flex items-center gap-1" style={{ color: '#4F46E5', fontSize: '14px', fontWeight: 500 }}>
-            Show all jobs <ArrowRight size={15} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {JOB_CATEGORIES.map(cat => {
-            const count = categories.find(c => c.category === cat.name)?.count || 0;
-            return (
-              <Link key={cat.name} href={`/jobs?category=${cat.name}`} className="group" style={{ background: 'white', border: '1px solid #F0F0F5', borderRadius: '16px', padding: '20px', display: 'block', transition: 'all 0.2s', textDecoration: 'none' }}>
-                <div style={{ fontSize: '32px', marginBottom: '10px' }}>{cat.icon}</div>
-                <div style={{ fontWeight: 600, color: '#1A1A2E', fontSize: '14px' }} className="group-hover:text-indigo-600 transition-colors">{cat.name}</div>
-                <div style={{ color: '#9CA3AF', fontSize: '13px', marginTop: '3px' }}>{count} jobs available</div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+
+
+      <CategorySection categories={categories} />
 
       {/* ── PROMO BANNER ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">

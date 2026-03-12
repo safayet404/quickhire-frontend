@@ -3,61 +3,91 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X, Briefcase } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   const links = [
-    { href: '/', label: 'Home' },
     { href: '/jobs', label: 'Find Jobs' },
+    { href: '/jobs', label: 'Browse Companies' },
     { href: '/admin', label: 'Admin' },
   ];
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <nav style={{ background: 'white', borderBottom: '1px solid #F3F4F6', position: 'sticky', top: 0, zIndex: 50 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
+
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Briefcase size={18} className="text-white" />
-            </div>
-            <span className="font-bold text-xl text-gray-900">
-              Quick<span className="text-primary">Hire</span>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+            <Image
+              src="/logo.png"
+              alt="QuickHire"
+              width={32}
+              height={32}
+              style={{ borderRadius: '50%' }}
+            />
+            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1A1A2E' }}>
+              Quick<span style={{ color: '#4F46E5' }}>Hire</span>
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop nav links */}
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: '32px' }}>
             {links.map(l => (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`text-sm font-medium transition-colors ${
-                  pathname === l.href
-                    ? 'text-primary'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  color: pathname === l.href ? '#4F46E5' : '#374151',
+                }}
               >
                 {l.label}
               </Link>
             ))}
           </div>
 
-          {/* CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/jobs" className="btn-primary text-sm py-2 px-5">
-              Find Jobs
+          {/* CTA buttons */}
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: '12px' }}>
+            <Link
+              href="/login"
+              style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#1A1A2E',
+                textDecoration: 'none',
+                padding: '8px 16px',
+              }}
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'white',
+                background: '#4F46E5',
+                textDecoration: 'none',
+                padding: '10px 22px',
+                borderRadius: '8px',
+              }}
+            >
+              Sign Up
             </Link>
           </div>
 
-          {/* Mobile menu toggle */}
+          {/* Mobile toggle */}
           <button
-            className="md:hidden p-2"
+            className="md:hidden"
             onClick={() => setOpen(!open)}
-            aria-label="Toggle menu"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
           >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -66,19 +96,33 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t bg-white px-4 py-4 space-y-3">
+        <div style={{ borderTop: '1px solid #F3F4F6', background: 'white', padding: '16px' }}>
           {links.map(l => (
             <Link
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className={`block text-sm font-medium py-2 ${
-                pathname === l.href ? 'text-primary' : 'text-gray-700'
-              }`}
+              style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 500,
+                padding: '10px 0',
+                color: pathname === l.href ? '#4F46E5' : '#374151',
+                textDecoration: 'none',
+                borderBottom: '1px solid #F9FAFB',
+              }}
             >
               {l.label}
             </Link>
           ))}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+            <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '10px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#1A1A2E', textDecoration: 'none' }}>
+              Login
+            </Link>
+            <Link href="/register" style={{ flex: 1, textAlign: 'center', padding: '10px', background: '#4F46E5', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'white', textDecoration: 'none' }}>
+              Sign Up
+            </Link>
+          </div>
         </div>
       )}
     </nav>

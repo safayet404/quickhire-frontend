@@ -55,8 +55,10 @@ export default function SearchBar({ onSearch, compact }: SearchBarProps) {
             className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 appearance-none bg-white pr-8"
           >
             <option value="">All Categories</option>
-            {JOB_CATEGORIES.map(c => (
-              <option key={c.name} value={c.name}>{c.name}</option>
+            {JOB_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
             ))}
           </select>
           <ChevronDown size={14} className="absolute right-3 text-gray-400 pointer-events-none" />

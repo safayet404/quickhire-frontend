@@ -33,7 +33,7 @@ export default function SavedJobsPage() {
   const { user, token, loading: authLoading } = useAuth();
   const router = useRouter();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) { router.push('/login'); return; }
@@ -121,7 +121,7 @@ export default function SavedJobsPage() {
                   </span>
                   {(job.salary_min || job.salary_max) && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <DollarSign size={12} /> {formatSalary(job.salary_min, job.salary_max)}
+                      <DollarSign size={12} /> {formatSalary(job.salary_min ?? undefined, job.salary_max ?? undefined)}
                     </span>
                   )}
                 </div>

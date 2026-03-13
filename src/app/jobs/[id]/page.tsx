@@ -6,15 +6,21 @@ import Link from 'next/link';
 import { MapPin, Clock, Users, DollarSign, Briefcase, ArrowLeft, CheckCircle, Building2 } from 'lucide-react';
 import ApplyModal from '@/components/jobs/ApplyModal';
 import { getJob } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Job, JOB_TYPES, JOB_TYPE_COLORS } from '@/types';
 import { formatSalary, formatDate, getCompanyInitials, getCompanyColor } from '@/lib/utils';
+import axios from 'axios';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export default function JobDetailPage() {
   const { id } = useParams();
+  const { user, token } = useAuth();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showApply, setShowApply] = useState(false);
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     getJob(id as string)
@@ -22,6 +28,15 @@ export default function JobDetailPage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Check if already applied
+  useEffect(() => {
+    if (!user || !token || !id) return;
+    axios.get(`${API}/seeker/applications/check`, {
+      params: { job_id: id },
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(res => setApplied(res.data.applied)).catch(() => { });
+  }, [user, token, id]);
 
   if (loading) {
     return (
@@ -51,7 +66,7 @@ export default function JobDetailPage() {
     <>
       <div className="bg-gray-50 min-h-screen">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Back */}
+
           <Link href="/jobs" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
             <ArrowLeft size={16} /> Back to jobs
           </Link>
@@ -59,7 +74,6 @@ export default function JobDetailPage() {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Main content */}
             <div className="lg:col-span-2 space-y-5">
-              {/* Header card */}
               <div className="card">
                 <div className="flex items-start gap-4">
                   <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ${getCompanyColor(job.company)}`}>
@@ -75,9 +89,10 @@ export default function JobDetailPage() {
                           <span className="flex items-center gap-1"><Clock size={14} />{formatDate(job.created_at)}</span>
                         </div>
                       </div>
-                      {job.is_featured && (
-                        <span className="badge bg-amber-50 text-amber-700">⭐ Featured</span>
-                      )}
+                      <div className="flex gap-2 flex-wrap">
+                        {job.is_featured && <span className="badge bg-amber-50 text-amber-700">⭐ Featured</span>}
+                        {applied && <span className="badge bg-green-50 text-green-700"><CheckCircle size={11} className="mr-1" />Applied</span>}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-3">
@@ -92,7 +107,6 @@ export default function JobDetailPage() {
                   </div>
                 </div>
 
-                {/* Salary */}
                 {(job.salary_min || job.salary_max) && (
                   <div className="mt-4 flex items-center gap-2 text-gray-700 font-medium">
                     <DollarSign size={16} className="text-green-500" />
@@ -102,13 +116,11 @@ export default function JobDetailPage() {
                 )}
               </div>
 
-              {/* Description */}
               <div className="card">
                 <h2 className="font-bold text-lg text-gray-900 mb-4">Job Description</h2>
                 <p className="text-gray-600 leading-relaxed whitespace-pre-line">{job.description}</p>
               </div>
 
-              {/* Requirements */}
               {job.requirements && job.requirements.length > 0 && (
                 <div className="card">
                   <h2 className="font-bold text-lg text-gray-900 mb-4">Requirements</h2>
@@ -126,20 +138,26 @@ export default function JobDetailPage() {
 
             {/* Sidebar */}
             <div className="space-y-5">
-              {/* Apply CTA */}
               <div className="card text-center bg-primary">
                 <Briefcase size={36} className="text-white mx-auto mb-3 opacity-80" />
-                <h3 className="font-bold text-lg text-white mb-2">Interested in this role?</h3>
-                <p className="text-primary-100 text-sm mb-5">Join the team at {job.company}</p>
-                <button
-                  onClick={() => setShowApply(true)}
-                  className="w-full bg-white text-primary font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors"
-                >
-                  Apply Now
-                </button>
+                <h3 className="font-bold text-lg text-white mb-2">
+                  {applied ? 'Application Sent!' : 'Interested in this role?'}
+                </h3>
+                <p className="text-indigo-200 text-sm mb-5">
+                  {applied ? 'Track your application status below.' : `Join the team at ${job.company}`}
+                </p>
+
+                {applied ? (
+                  <Link href="/applications" className="w-full block bg-white text-primary font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors text-center">
+                    Track Application
+                  </Link>
+                ) : (
+                  <button onClick={() => setShowApply(true)} className="w-full bg-white text-primary font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    Apply Now
+                  </button>
+                )}
               </div>
 
-              {/* Job overview */}
               <div className="card">
                 <h3 className="font-bold text-gray-900 mb-4">Job Overview</h3>
                 <dl className="space-y-4">
@@ -162,8 +180,13 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* Apply modal */}
-      {showApply && <ApplyModal job={job} onClose={() => setShowApply(false)} />}
+      {showApply && (
+        <ApplyModal
+          job={job}
+          onClose={() => setShowApply(false)}
+          onApplied={() => setApplied(true)}
+        />
+      )}
     </>
   );
 }

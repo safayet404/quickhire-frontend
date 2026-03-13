@@ -56,9 +56,9 @@ export default function Navbar() {
                 >
                   {/* Avatar */}
                   <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'white' }}>{user.name[0].toUpperCase()}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'white' }}>{user?.name[0].toUpperCase()}</span>
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A2E' }}>{user.name.split(' ')[0]}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A2E' }}>{user?.name.split(' ')[0]}</span>
                   <ChevronDown size={14} color="#9CA3AF" />
                 </button>
 
@@ -70,10 +70,10 @@ export default function Navbar() {
                   >
                     {/* User info */}
                     <div style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
-                      <div style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A2E' }}>{user.name}</div>
-                      <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>{user.email}</div>
+                      <div style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A2E' }}>{user?.name}</div>
+                      <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>{user?.email}</div>
                       <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', background: '#EEF2FF', color: '#4F46E5', textTransform: 'capitalize' }}>
-                        {user.role}
+                        {user?.role}
                       </span>
                     </div>
 

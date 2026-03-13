@@ -1,130 +1,118 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { Briefcase, ChevronDown, User, LogOut, LayoutDashboard } from 'lucide-react';
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const links = [
-    { href: '/jobs', label: 'Find Jobs' },
-    { href: '/', label: 'Browse Companies' },
-    { href: '/admin', label: 'Admin' },
-  ];
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+    setDropdownOpen(false);
+  };
 
   return (
-    <nav style={{ background: 'white', borderBottom: '1px solid #F3F4F6', position: 'sticky', top: 0, zIndex: 50 }}>
+    <nav style={{ background: 'white', borderBottom: '1px solid #F0F0F5', position: 'sticky', top: 0, zIndex: 50 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
 
           {/* Logo */}
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-            <Image
-              src="/logo.png"
-              alt="QuickHire"
-              width={32}
-              height={32}
-              style={{ borderRadius: '50%' }}
-            />
-            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1A1A2E' }}>
-              Quick<span style={{ color: '#4F46E5' }}>Hire</span>
-            </span>
+            <div style={{ width: '34px', height: '34px', background: '#4F46E5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Briefcase size={17} color="white" />
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A2E' }}>QuickHire</span>
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex" style={{ alignItems: 'center', gap: '32px' }}>
-            {links.map(l => (
-              <Link
-                key={l.href}
-                href={l.href}
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  textDecoration: 'none',
-                  color: pathname === l.href ? '#4F46E5' : '#374151',
-                }}
-              >
-                {l.label}
-              </Link>
-            ))}
+          {/* Nav links */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+            <Link href="/jobs" style={{ fontSize: '14px', fontWeight: 500, color: '#6B7280', textDecoration: 'none' }}>Find Jobs</Link>
+            <Link href="/companies" style={{ fontSize: '14px', fontWeight: 500, color: '#6B7280', textDecoration: 'none' }}>Companies</Link>
+            {isAuthenticated && user?.role === 'admin' && (
+              <Link href="/admin" style={{ fontSize: '14px', fontWeight: 500, color: '#6B7280', textDecoration: 'none' }}>Admin</Link>
+            )}
           </div>
 
-          {/* CTA buttons */}
-          <div className="hidden md:flex" style={{ alignItems: 'center', gap: '12px' }}>
-            <Link
-              href="/login"
-              style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#1A1A2E',
-                textDecoration: 'none',
-                padding: '8px 16px',
-              }}
-            >
-              Login
-            </Link>
-            <Link
-              href="/"
-              style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: 'white',
-                background: '#4F46E5',
-                textDecoration: 'none',
-                padding: '10px 22px',
-                borderRadius: '8px',
-              }}
-            >
-              Sign Up
-            </Link>
-          </div>
+          {/* Auth buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {!isAuthenticated ? (
+              <>
+                <Link href="/login" style={{ fontSize: '14px', fontWeight: 600, color: '#4F46E5', textDecoration: 'none' }}>Login</Link>
+                <Link href="/register" style={{ fontSize: '14px', fontWeight: 600, color: 'white', background: '#4F46E5', padding: '8px 20px', borderRadius: '8px', textDecoration: 'none' }}>
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F5F5FA', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '7px 14px', cursor: 'pointer' }}
+                >
+                  {/* Avatar */}
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'white' }}>{user.name[0].toUpperCase()}</span>
+                  </div>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A2E' }}>{user.name.split(' ')[0]}</span>
+                  <ChevronDown size={14} color="#9CA3AF" />
+                </button>
 
-          {/* Mobile toggle */}
-          <button
-            className="md:hidden"
-            onClick={() => setOpen(!open)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
+                {/* Dropdown */}
+                {dropdownOpen && (
+                  <div
+                    style={{ position: 'absolute', right: 0, top: '48px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.10)', minWidth: '200px', zIndex: 100, overflow: 'hidden' }}
+                    onMouseLeave={() => setDropdownOpen(false)}
+                  >
+                    {/* User info */}
+                    <div style={{ padding: '14px 16px', borderBottom: '1px solid #F0F0F5' }}>
+                      <div style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A2E' }}>{user.name}</div>
+                      <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>{user.email}</div>
+                      <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', background: '#EEF2FF', color: '#4F46E5', textTransform: 'capitalize' }}>
+                        {user.role}
+                      </span>
+                    </div>
+
+                    {/* Menu items */}
+                    <div style={{ padding: '6px' }}>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setDropdownOpen(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', textDecoration: 'none', color: '#374151', fontSize: '14px' }}
+                        className="hover:bg-gray-50"
+                      >
+                        <LayoutDashboard size={15} color="#6B7280" /> Dashboard
+                      </Link>
+                      <Link
+                        href="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', textDecoration: 'none', color: '#374151', fontSize: '14px' }}
+                        className="hover:bg-gray-50"
+                      >
+                        <User size={15} color="#6B7280" /> My Profile
+                      </Link>
+                    </div>
+
+                    <div style={{ padding: '6px', borderTop: '1px solid #F0F0F5' }}>
+                      <button
+                        onClick={handleLogout}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', color: '#DC2626', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', width: '100%' }}
+                        className="hover:bg-red-50"
+                      >
+                        <LogOut size={15} color="#DC2626" /> Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {open && (
-        <div style={{ borderTop: '1px solid #F3F4F6', background: 'white', padding: '16px' }}>
-          {links.map(l => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setOpen(false)}
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                padding: '10px 0',
-                color: pathname === l.href ? '#4F46E5' : '#374151',
-                textDecoration: 'none',
-                borderBottom: '1px solid #F9FAFB',
-              }}
-            >
-              {l.label}
-            </Link>
-          ))}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-            <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '10px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: '#1A1A2E', textDecoration: 'none' }}>
-              Login
-            </Link>
-            <Link href="/" style={{ flex: 1, textAlign: 'center', padding: '10px', background: '#4F46E5', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'white', textDecoration: 'none' }}>
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      )}
     </nav>
   );
 }

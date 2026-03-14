@@ -9,6 +9,7 @@ import {
   Briefcase, ChevronDown, User, LogOut, LayoutDashboard,
   Bookmark, FileText, Bell, CheckCheck, X,
 } from 'lucide-react';
+import Image from 'next/image';
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -72,11 +73,18 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
 
           {/* Logo */}
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+          {/* <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
             <div style={{ width: '34px', height: '34px', background: '#4F46E5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Briefcase size={17} color="white" />
             </div>
             <span style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A2E' }}>QuickHire</span>
+          </Link> */}
+
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
+            <Image src="/logo.png" alt="QuickHire" width={30} height={30} style={{ borderRadius: '50%' }} />
+            <span style={{ fontWeight: 700, fontSize: '17px', color: 'black' }}>
+              Quick<span style={{ color: '#4F46E5' }}>Hire</span>
+            </span>
           </Link>
 
           {/* Nav links */}

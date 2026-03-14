@@ -20,7 +20,7 @@ export default function Footer() {
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
               <Image src="/logo.png" alt="QuickHire" width={30} height={30} style={{ borderRadius: '50%' }} />
               <span style={{ fontWeight: 700, fontSize: '17px', color: 'white' }}>
-                Quick<span style={{ color: '#818CF8' }}>Hire</span>
+                Quick<span style={{ color: '#4F46E5' }}>Hire</span>
               </span>
             </Link>
             <p style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.7, maxWidth: '220px' }}>

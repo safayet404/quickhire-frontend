@@ -59,13 +59,37 @@ export default function JobCard({ job, featured }: JobCardProps) {
 
         {/* Row 1: Logo + Bookmark */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div style={{ position: 'relative' }}>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${getCompanyColor(job.company)}`}>
-              {getCompanyInitials(job.company)}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            {/* Company logo or colored initial */}
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '14px',
+              overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {job.company_logo ? (
+                <img src={job.company_logo} alt={job.company}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+              ) : (
+                <div style={{
+                  width: '100%', height: '100%', borderRadius: '14px',
+                  background: `hsl(${Math.abs(job.company.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 360}, 65%, 50%)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>
+                    {job.company[0]?.toUpperCase()}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Featured star badge */}
             {featured && (
-              <div style={{ position: 'absolute', top: '-4px', right: '-4px', width: '48px', height: '48px', borderRadius: '50%', background: '#F59E0B', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '17px' }}> {getCompanyInitials(job.company)} </span>
+              <div style={{
+                position: 'absolute', top: '-4px', right: '-4px',
+                width: '16px', height: '16px', borderRadius: '50%',
+                background: '#F59E0B', border: '2px solid white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '8px' }}>⭐</span>
               </div>
             )}
           </div>

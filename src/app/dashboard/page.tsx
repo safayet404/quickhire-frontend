@@ -14,7 +14,7 @@ import { formatDate, formatSalary, getCompanyInitials, getCompanyColor } from '@
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const STATUS_CONFIG = {
-  pending:  { label: 'Pending',  color: '#D97706', bg: '#FFFBEB', icon: Clock },
+  pending: { label: 'Pending', color: '#D97706', bg: '#FFFBEB', icon: Clock },
   reviewed: { label: 'Reviewed', color: '#2563EB', bg: '#EFF6FF', icon: Eye },
   accepted: { label: 'Accepted', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle },
   rejected: { label: 'Rejected', color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
@@ -27,16 +27,16 @@ interface ProfileCompletion {
 
 function getProfileCompletion(profile: any, user: any): ProfileCompletion {
   const checks = [
-    { key: 'headline',   label: 'Add a headline',      done: !!profile?.headline },
-    { key: 'bio',        label: 'Write a bio',          done: !!profile?.bio },
-    { key: 'location',   label: 'Add your location',    done: !!profile?.location },
-    { key: 'resume_url', label: 'Upload resume link',   done: !!profile?.resume_url },
-    { key: 'skills',     label: 'Add skills',           done: profile?.skills?.length > 0 },
-    { key: 'experience', label: 'Add work experience',  done: profile?.experience?.length > 0 },
-    { key: 'education',  label: 'Add education',        done: profile?.education?.length > 0 },
-    { key: 'linkedin',   label: 'Add LinkedIn',         done: !!profile?.linkedin },
+    { key: 'headline', label: 'Add a headline', done: !!profile?.headline },
+    { key: 'bio', label: 'Write a bio', done: !!profile?.bio },
+    { key: 'location', label: 'Add your location', done: !!profile?.location },
+    { key: 'resume_url', label: 'Upload resume link', done: !!profile?.resume_url },
+    { key: 'skills', label: 'Add skills', done: profile?.skills?.length > 0 },
+    { key: 'experience', label: 'Add work experience', done: profile?.experience?.length > 0 },
+    { key: 'education', label: 'Add education', done: profile?.education?.length > 0 },
+    { key: 'linkedin', label: 'Add LinkedIn', done: !!profile?.linkedin },
   ];
-  const done    = checks.filter(c => c.done).length;
+  const done = checks.filter(c => c.done).length;
   const missing = checks.filter(c => !c.done).map(c => c.label);
   return { score: Math.round((done / checks.length) * 100), missing };
 }
@@ -45,15 +45,15 @@ export default function DashboardPage() {
   const { user, token, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [profile, setProfile]         = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
-  const [savedJobs, setSavedJobs]     = useState<any[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const [savedJobs, setSavedJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user)                      { router.push('/login'); return; }
-    if (!authLoading && user?.role === 'employer')  { router.push('/dashboard/employer'); return; }
-    if (!authLoading && user?.role === 'admin')     { router.push('/admin'); return; }
+    if (!authLoading && !user) { router.push('/login'); return; }
+    if (!authLoading && user?.role === 'employer') { router.push('/dashboard/employer'); return; }
+    if (!authLoading && user?.role === 'admin') { router.push('/admin'); return; }
     if (user && token) fetchAll();
   }, [user, token, authLoading]);
 
@@ -61,9 +61,9 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [profileRes, appsRes, savedRes] = await Promise.all([
-        axios.get(`${API}/profile`,             { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API}/profile`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/seeker/applications`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/saved-jobs`,          { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API}/saved-jobs`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       setProfile(profileRes.data.profile);
       setApplications(appsRes.data.data || []);
@@ -83,13 +83,13 @@ export default function DashboardPage() {
   const completion = getProfileCompletion(profile, user);
 
   const stats = {
-    total:    applications.length,
-    pending:  applications.filter(a => a.status === 'pending').length,
+    total: applications.length,
+    pending: applications.filter(a => a.status === 'pending').length,
     accepted: applications.filter(a => a.status === 'accepted').length,
-    saved:    savedJobs.length,
+    saved: savedJobs.length,
   };
 
-  const recentApps  = applications.slice(0, 5);
+  const recentApps = applications.slice(0, 5);
   const recentSaved = savedJobs.slice(0, 3);
 
   const card = {
@@ -116,10 +116,10 @@ export default function DashboardPage() {
         {/* Stat cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
           {[
-            { label: 'Total Applied',  value: stats.total,    icon: Briefcase,    color: '#4F46E5', bg: '#EEF2FF' },
-            { label: 'Pending',        value: stats.pending,  icon: Clock,        color: '#D97706', bg: '#FFFBEB' },
-            { label: 'Accepted',       value: stats.accepted, icon: CheckCircle,  color: '#16A34A', bg: '#F0FDF4' },
-            { label: 'Saved Jobs',     value: stats.saved,    icon: Bookmark,     color: '#2563EB', bg: '#EFF6FF' },
+            { label: 'Total Applied', value: stats.total, icon: Briefcase, color: '#4F46E5', bg: '#EEF2FF' },
+            { label: 'Pending', value: stats.pending, icon: Clock, color: '#D97706', bg: '#FFFBEB' },
+            { label: 'Accepted', value: stats.accepted, icon: CheckCircle, color: '#16A34A', bg: '#F0FDF4' },
+            { label: 'Saved Jobs', value: stats.saved, icon: Bookmark, color: '#2563EB', bg: '#EFF6FF' },
           ].map(({ label, value, icon: Icon, color, bg }) => (
             <div key={label} style={card}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
@@ -283,10 +283,10 @@ export default function DashboardPage() {
               <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A2E', marginBottom: '16px' }}>Quick Actions</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {[
-                  { href: '/jobs',         icon: Briefcase, label: 'Browse Jobs',           color: '#4F46E5', bg: '#EEF2FF' },
-                  { href: '/applications', icon: FileText,  label: 'My Applications',       color: '#2563EB', bg: '#EFF6FF' },
-                  { href: '/saved-jobs',   icon: Bookmark,  label: 'Saved Jobs',            color: '#D97706', bg: '#FFFBEB' },
-                  { href: '/profile',      icon: User,      label: 'Edit Profile',          color: '#16A34A', bg: '#F0FDF4' },
+                  { href: '/jobs', icon: Briefcase, label: 'Browse Jobs', color: '#4F46E5', bg: '#EEF2FF' },
+                  { href: '/applications', icon: FileText, label: 'My Applications', color: '#2563EB', bg: '#EFF6FF' },
+                  { href: '/saved-jobs', icon: Bookmark, label: 'Saved Jobs', color: '#D97706', bg: '#FFFBEB' },
+                  { href: '/profile', icon: User, label: 'Edit Profile', color: '#16A34A', bg: '#F0FDF4' },
                 ].map(({ href, icon: Icon, label, color, bg }) => (
                   <Link key={href} href={href} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '10px', border: '1px solid #F0F0F5', textDecoration: 'none', transition: 'background 0.15s' }} className="hover:bg-gray-50">
                     <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

@@ -19,13 +19,13 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 type Tab = 'overview' | 'users' | 'jobs' | 'applications';
 
 const ROLE_CONFIG = {
-  seeker:   { bg: '#EEF2FF', color: '#4F46E5' },
+  seeker: { bg: '#EEF2FF', color: '#4F46E5' },
   employer: { bg: '#F0FDF4', color: '#16A34A' },
-  admin:    { bg: '#FEF2F2', color: '#DC2626' },
+  admin: { bg: '#FEF2F2', color: '#DC2626' },
 };
 
 const STATUS_CONFIG = {
-  pending:  { label: 'Pending',  color: '#D97706', bg: '#FFFBEB', icon: Clock },
+  pending: { label: 'Pending', color: '#D97706', bg: '#FFFBEB', icon: Clock },
   reviewed: { label: 'Reviewed', color: '#2563EB', bg: '#EFF6FF', icon: Eye },
   accepted: { label: 'Accepted', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle },
   rejected: { label: 'Rejected', color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
@@ -34,34 +34,34 @@ const STATUS_CONFIG = {
 export default function AdminPage() {
   const { user, token, loading: authLoading } = useAuth();
   const router = useRouter();
-  const toast  = useToast();
+  const toast = useToast();
 
-  const [tab, setTab]         = useState<Tab>('overview');
-  const [stats, setStats]     = useState<any>(null);
-  const [users, setUsers]     = useState<any[]>([]);
-  const [jobs, setJobs]       = useState<any[]>([]);
-  const [apps, setApps]       = useState<any[]>([]);
+  const [tab, setTab] = useState<Tab>('overview');
+  const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [apps, setApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // search / filter
-  const [userSearch, setUserSearch]   = useState('');
-  const [userRole, setUserRole]       = useState('');
-  const [jobSearch, setJobSearch]     = useState('');
-  const [jobStatus, setJobStatus]     = useState('');
-  const [appStatus, setAppStatus]     = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const [jobSearch, setJobSearch] = useState('');
+  const [jobStatus, setJobStatus] = useState('');
+  const [appStatus, setAppStatus] = useState('');
 
   // action states
   const [deletingUser, setDeletingUser] = useState<number | null>(null);
-  const [deletingJob, setDeletingJob]   = useState<number | null>(null);
-  const [deletingApp, setDeletingApp]   = useState<number | null>(null);
-  const [togglingJob, setTogglingJob]   = useState<number | null>(null);
+  const [deletingJob, setDeletingJob] = useState<number | null>(null);
+  const [deletingApp, setDeletingApp] = useState<number | null>(null);
+  const [togglingJob, setTogglingJob] = useState<number | null>(null);
   const [updatingRole, setUpdatingRole] = useState<number | null>(null);
-  const [updatingApp, setUpdatingApp]   = useState<number | null>(null);
+  const [updatingApp, setUpdatingApp] = useState<number | null>(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
-    if (!authLoading && !user)               { router.push('/login'); return; }
+    if (!authLoading && !user) { router.push('/login'); return; }
     if (!authLoading && user?.role !== 'admin') { router.push('/'); return; }
     if (user && token) fetchAll();
   }, [user, token, authLoading]);
@@ -70,9 +70,9 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const [s, u, j, a] = await Promise.all([
-        axios.get(`${API}/admin/stats`,        { headers }),
-        axios.get(`${API}/admin/users`,        { headers }),
-        axios.get(`${API}/admin/jobs`,         { headers }),
+        axios.get(`${API}/admin/stats`, { headers }),
+        axios.get(`${API}/admin/users`, { headers }),
+        axios.get(`${API}/admin/jobs`, { headers }),
         axios.get(`${API}/admin/applications`, { headers }),
       ]);
       setStats(s.data.data);
@@ -105,8 +105,8 @@ export default function AdminPage() {
   }, [appStatus, token]);
 
   useEffect(() => { if (token) fetchUsers(); }, [userSearch, userRole]);
-  useEffect(() => { if (token) fetchJobs();  }, [jobSearch, jobStatus]);
-  useEffect(() => { if (token) fetchApps();  }, [appStatus]);
+  useEffect(() => { if (token) fetchJobs(); }, [jobSearch, jobStatus]);
+  useEffect(() => { if (token) fetchApps(); }, [appStatus]);
 
   // ── User actions ─────────────────────────────────────────────
   const handleRoleChange = async (id: number, role: string) => {
@@ -186,10 +186,10 @@ export default function AdminPage() {
     );
   }
 
-  const card  = { background: 'white', borderRadius: '16px', border: '1px solid #F0F0F5', padding: '24px' };
-  const th    = { padding: '12px 16px', textAlign: 'left' as const, fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase' as const, letterSpacing: '0.05em', borderBottom: '1px solid #F0F0F5' };
-  const td    = { padding: '13px 16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #F9FAFB' };
-  const inp   = { padding: '9px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '13px', outline: 'none', background: 'white' };
+  const card = { background: 'white', borderRadius: '16px', border: '1px solid #F0F0F5', padding: '24px' };
+  const th = { padding: '12px 16px', textAlign: 'left' as const, fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase' as const, letterSpacing: '0.05em', borderBottom: '1px solid #F0F0F5' };
+  const td = { padding: '13px 16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #F9FAFB' };
+  const inp = { padding: '9px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '13px', outline: 'none', background: 'white' };
   const tabBt = (t: Tab) => ({
     padding: '9px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '14px',
     background: tab === t ? '#4F46E5' : 'transparent',
@@ -197,10 +197,10 @@ export default function AdminPage() {
   });
 
   const TABS: { key: Tab; label: string; icon: any }[] = [
-    { key: 'overview',      label: 'Overview',     icon: TrendingUp },
-    { key: 'users',         label: `Users (${stats?.total_users ?? 0})`,         icon: Users },
-    { key: 'jobs',          label: `Jobs (${stats?.total_jobs ?? 0})`,            icon: Briefcase },
-    { key: 'applications',  label: `Applications (${stats?.total_applications ?? 0})`, icon: FileText },
+    { key: 'overview', label: 'Overview', icon: TrendingUp },
+    { key: 'users', label: `Users (${stats?.total_users ?? 0})`, icon: Users },
+    { key: 'jobs', label: `Jobs (${stats?.total_jobs ?? 0})`, icon: Briefcase },
+    { key: 'applications', label: `Applications (${stats?.total_applications ?? 0})`, icon: FileText },
   ];
 
   return (
@@ -239,10 +239,10 @@ export default function AdminPage() {
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
               {[
-                { label: 'Total Users',    value: stats.total_users,        icon: Users,     color: '#4F46E5', bg: '#EEF2FF' },
-                { label: 'Total Jobs',     value: stats.total_jobs,         icon: Briefcase, color: '#16A34A', bg: '#F0FDF4' },
-                { label: 'Applications',   value: stats.total_applications, icon: FileText,  color: '#2563EB', bg: '#EFF6FF' },
-                { label: 'Pending Review', value: stats.pending_apps,       icon: Clock,     color: '#D97706', bg: '#FFFBEB' },
+                { label: 'Total Users', value: stats.total_users, icon: Users, color: '#4F46E5', bg: '#EEF2FF' },
+                { label: 'Total Jobs', value: stats.total_jobs, icon: Briefcase, color: '#16A34A', bg: '#F0FDF4' },
+                { label: 'Applications', value: stats.total_applications, icon: FileText, color: '#2563EB', bg: '#EFF6FF' },
+                { label: 'Pending Review', value: stats.pending_apps, icon: Clock, color: '#D97706', bg: '#FFFBEB' },
               ].map(({ label, value, icon: Icon, color, bg }) => (
                 <div key={label} style={card}>
                   <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
@@ -259,9 +259,9 @@ export default function AdminPage() {
               <div style={card}>
                 <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#1A1A2E', marginBottom: '16px' }}>User Breakdown</h3>
                 {[
-                  { role: 'Seekers',   value: stats.total_seekers,   color: '#4F46E5' },
+                  { role: 'Seekers', value: stats.total_seekers, color: '#4F46E5' },
                   { role: 'Employers', value: stats.total_employers, color: '#16A34A' },
-                  { role: 'Admins',    value: stats.total_users - stats.total_seekers - stats.total_employers, color: '#DC2626' },
+                  { role: 'Admins', value: stats.total_users - stats.total_seekers - stats.total_employers, color: '#DC2626' },
                 ].map(({ role, value, color }) => (
                   <div key={role} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <span style={{ fontSize: '14px', color: '#6B7280' }}>{role}</span>
@@ -279,9 +279,9 @@ export default function AdminPage() {
               <div style={card}>
                 <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#1A1A2E', marginBottom: '16px' }}>Application Status</h3>
                 {[
-                  { label: 'Pending',  value: stats.pending_apps,  color: '#D97706' },
+                  { label: 'Pending', value: stats.pending_apps, color: '#D97706' },
                   { label: 'Accepted', value: stats.accepted_apps, color: '#16A34A' },
-                  { label: 'Others',   value: stats.total_applications - stats.pending_apps - stats.accepted_apps, color: '#9CA3AF' },
+                  { label: 'Others', value: stats.total_applications - stats.pending_apps - stats.accepted_apps, color: '#9CA3AF' },
                 ].map(({ label, value, color }) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <span style={{ fontSize: '14px', color: '#6B7280' }}>{label}</span>

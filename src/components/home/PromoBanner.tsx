@@ -115,7 +115,7 @@ export default function PromoBanner() {
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.6, marginBottom: '24px' }}>
               Post jobs, manage applications, and find the perfect candidate — all in one powerful dashboard.
             </p>
-            <Link href="/register?role=employer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'white', color: '#4F46E5', fontWeight: 700, fontSize: '14px', padding: '12px 26px', borderRadius: '10px', textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+            <Link href="/register?role=employer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#39B0EF', color: 'white', fontWeight: 700, fontSize: '14px', padding: '12px 26px', borderRadius: '10px', textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
               Post a Job <ArrowRight size={15} />
             </Link>
           </div>

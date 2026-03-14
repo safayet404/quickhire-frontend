@@ -73,19 +73,21 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
 
           {/* Logo */}
-          {/* <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
             <div style={{ width: '34px', height: '34px', background: '#4F46E5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Briefcase size={17} color="white" />
             </div>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#1A1A2E' }}>QuickHire</span>
-          </Link> */}
-
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
-            <Image src="/logo.png" alt="QuickHire" width={30} height={30} style={{ borderRadius: '50%' }} />
             <span style={{ fontWeight: 700, fontSize: '17px', color: 'black' }}>
-              Quick<span style={{ color: '#4F46E5' }}>Hire</span>
+              Job<span style={{ color: '#4F46E5' }}>Vault</span>
             </span>
           </Link>
+
+          {/* <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
+            <Image src="/logo.png" alt="QuickHire" width={30} height={30} style={{ borderRadius: '50%' }} />
+            <span style={{ fontWeight: 700, fontSize: '17px', color: 'black' }}>
+              Job<span style={{ color: '#4F46E5' }}>Vault</span>
+            </span>
+          </Link> */}
 
           {/* Nav links */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>

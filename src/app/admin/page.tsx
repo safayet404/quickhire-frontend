@@ -1,339 +1,491 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/context/ToastContext';
 import Link from 'next/link';
-import { Plus, Trash2, Edit, Eye, X, Loader2, AlertCircle, CheckCircle, Briefcase, Users, ChevronDown } from 'lucide-react';
-import { createJob, deleteJob, getJobs, getApplications } from '@/lib/api';
-import { Job, Application, JOB_CATEGORIES, JOB_TYPES } from '@/types';
-import { formatDate, formatSalary, getCompanyInitials, getCompanyColor } from '@/lib/utils';
+import axios from 'axios';
+import {
+  Users, Briefcase, FileText, TrendingUp, Trash2,
+  ToggleLeft, ToggleRight, Shield, Search, Eye,
+  CheckCircle, XCircle, Clock, ChevronDown
+} from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { JOB_TYPES } from '@/types';
 
-type Tab = 'jobs' | 'applications';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-const EMPTY_FORM = {
-  title: '', company: '', location: '', category: '', type: 'full-time',
-  salary_min: '', salary_max: '', description: '', requirements: '',
-  is_featured: false,
+type Tab = 'overview' | 'users' | 'jobs' | 'applications';
+
+const ROLE_CONFIG = {
+  seeker: { bg: '#EEF2FF', color: '#4F46E5' },
+  employer: { bg: '#F0FDF4', color: '#16A34A' },
+  admin: { bg: '#FEF2F2', color: '#DC2626' },
+};
+
+const STATUS_CONFIG = {
+  pending: { label: 'Pending', color: '#D97706', bg: '#FFFBEB', icon: Clock },
+  reviewed: { label: 'Reviewed', color: '#2563EB', bg: '#EFF6FF', icon: Eye },
+  accepted: { label: 'Accepted', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle },
+  rejected: { label: 'Rejected', color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
 };
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<Tab>('jobs');
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const { user, token, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const toast = useToast();
+
+  const [tab, setTab] = useState<Tab>('overview');
+  const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [apps, setApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [submitting, setSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const showToast = (type: 'success' | 'error', msg: string) => {
-    setToast({ type, msg });
-    setTimeout(() => setToast(null), 4000);
-  };
+  // search / filter
+  const [userSearch, setUserSearch] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const [jobSearch, setJobSearch] = useState('');
+  const [jobStatus, setJobStatus] = useState('');
+  const [appStatus, setAppStatus] = useState('');
 
-  const loadData = () => {
+  // action states
+  const [deletingUser, setDeletingUser] = useState<number | null>(null);
+  const [deletingJob, setDeletingJob] = useState<number | null>(null);
+  const [deletingApp, setDeletingApp] = useState<number | null>(null);
+  const [togglingJob, setTogglingJob] = useState<number | null>(null);
+  const [updatingRole, setUpdatingRole] = useState<number | null>(null);
+  const [updatingApp, setUpdatingApp] = useState<number | null>(null);
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    if (!authLoading && !user) { router.push('/login'); return; }
+    if (!authLoading && user?.role !== 'admin') { router.push('/'); return; }
+    if (user && token) fetchAll();
+  }, [user, token, authLoading]);
+
+  const fetchAll = async () => {
     setLoading(true);
-    Promise.all([
-      getJobs({ per_page: 50 }),
-      getApplications({ per_page: 50 }),
-    ]).then(([j, a]) => {
-      setJobs(j.data.data || []);
-      setApplications(a.data.data || []);
-    }).finally(() => setLoading(false));
-  };
-
-  useEffect(() => { loadData(); }, []);
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setForm(f => ({
-      ...f,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    }));
-    setFormErrors(errs => ({ ...errs, [name]: '' }));
-  };
-
-  const validateForm = () => {
-    const errs: Record<string, string> = {};
-    if (!form.title.trim()) errs.title = 'Required';
-    if (!form.company.trim()) errs.company = 'Required';
-    if (!form.location.trim()) errs.location = 'Required';
-    if (!form.category) errs.category = 'Required';
-    if (!form.description.trim()) errs.description = 'Required';
-    return errs;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs = validateForm();
-    if (Object.keys(errs).length) { setFormErrors(errs); return; }
-
-    setSubmitting(true);
     try {
-      const payload = {
-        ...form,
-        salary_min: form.salary_min ? Number(form.salary_min) : null,
-        salary_max: form.salary_max ? Number(form.salary_max) : null,
-        requirements: form.requirements
-          ? form.requirements.split('\n').map(s => s.trim()).filter(Boolean)
-          : [],
-      };
-      await createJob(payload);
-      showToast('success', 'Job created successfully!');
-      setShowForm(false);
-      setForm(EMPTY_FORM);
-      loadData();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      if (error?.response?.data?.errors) {
-        const apiErrors: Record<string, string> = {};
-        Object.entries(error.response.data.errors).forEach(([k, v]) => { apiErrors[k] = v[0]; });
-        setFormErrors(apiErrors);
-      } else {
-        showToast('error', error?.response?.data?.message || 'Something went wrong.');
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      const [s, u, j, a] = await Promise.all([
+        axios.get(`${API}/admin/stats`, { headers }),
+        axios.get(`${API}/admin/users`, { headers }),
+        axios.get(`${API}/admin/jobs`, { headers }),
+        axios.get(`${API}/admin/applications`, { headers }),
+      ]);
+      setStats(s.data.data);
+      setUsers(u.data.data);
+      setJobs(j.data.data);
+      setApps(a.data.data);
+    } catch { toast.error('Failed to load admin data.'); }
+    finally { setLoading(false); }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this job? This will also delete all applications for it.')) return;
-    setDeletingId(id);
+  const fetchUsers = useCallback(async () => {
     try {
-      await deleteJob(id);
-      showToast('success', 'Job deleted.');
-      loadData();
-    } catch {
-      showToast('error', 'Failed to delete job.');
-    } finally {
-      setDeletingId(null);
-    }
+      const res = await axios.get(`${API}/admin/users`, { headers, params: { search: userSearch, role: userRole } });
+      setUsers(res.data.data);
+    } catch { toast.error('Failed to load users.'); }
+  }, [userSearch, userRole, token]);
+
+  const fetchJobs = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/admin/jobs`, { headers, params: { search: jobSearch, status: jobStatus } });
+      setJobs(res.data.data);
+    } catch { toast.error('Failed to load jobs.'); }
+  }, [jobSearch, jobStatus, token]);
+
+  const fetchApps = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/admin/applications`, { headers, params: { status: appStatus } });
+      setApps(res.data.data);
+    } catch { toast.error('Failed to load applications.'); }
+  }, [appStatus, token]);
+
+  useEffect(() => { if (token) fetchUsers(); }, [userSearch, userRole]);
+  useEffect(() => { if (token) fetchJobs(); }, [jobSearch, jobStatus]);
+  useEffect(() => { if (token) fetchApps(); }, [appStatus]);
+
+  // ── User actions ─────────────────────────────────────────────
+  const handleRoleChange = async (id: number, role: string) => {
+    setUpdatingRole(id);
+    try {
+      await axios.patch(`${API}/admin/users/${id}/role`, { role }, { headers });
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, role } : u));
+      toast.success('User role updated.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update role.');
+    } finally { setUpdatingRole(null); }
   };
+
+  const handleDeleteUser = async (id: number) => {
+    if (!confirm('Delete this user? All their data will be removed.')) return;
+    setDeletingUser(id);
+    try {
+      await axios.delete(`${API}/admin/users/${id}`, { headers });
+      setUsers(prev => prev.filter(u => u.id !== id));
+      if (stats) setStats({ ...stats, total_users: stats.total_users - 1 });
+      toast.success('User deleted.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete user.');
+    } finally { setDeletingUser(null); }
+  };
+
+  // ── Job actions ──────────────────────────────────────────────
+  const handleToggleJob = async (job: any) => {
+    setTogglingJob(job.id);
+    try {
+      const res = await axios.patch(`${API}/admin/jobs/${job.id}/toggle`, {}, { headers });
+      setJobs(prev => prev.map(j => j.id === job.id ? { ...j, is_active: res.data.is_active } : j));
+      toast.success(res.data.message);
+    } catch { toast.error('Failed to toggle job.'); }
+    finally { setTogglingJob(null); }
+  };
+
+  const handleDeleteJob = async (id: number) => {
+    if (!confirm('Delete this job and all its applications?')) return;
+    setDeletingJob(id);
+    try {
+      await axios.delete(`${API}/admin/jobs/${id}`, { headers });
+      setJobs(prev => prev.filter(j => j.id !== id));
+      if (stats) setStats({ ...stats, total_jobs: stats.total_jobs - 1 });
+      toast.success('Job deleted.');
+    } catch { toast.error('Failed to delete job.'); }
+    finally { setDeletingJob(null); }
+  };
+
+  // ── Application actions ───────────────────────────────────────
+  const handleAppStatus = async (id: number, status: string) => {
+    setUpdatingApp(id);
+    try {
+      await axios.patch(`${API}/admin/applications/${id}/status`, { status }, { headers });
+      setApps(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+      toast.success('Status updated.');
+    } catch { toast.error('Failed to update status.'); }
+    finally { setUpdatingApp(null); }
+  };
+
+  const handleDeleteApp = async (id: number) => {
+    if (!confirm('Delete this application?')) return;
+    setDeletingApp(id);
+    try {
+      await axios.delete(`${API}/admin/applications/${id}`, { headers });
+      setApps(prev => prev.filter(a => a.id !== id));
+      toast.success('Application deleted.');
+    } catch { toast.error('Failed to delete application.'); }
+    finally { setDeletingApp(null); }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#9CA3AF', fontSize: '14px' }}>Loading admin panel...</p>
+      </div>
+    );
+  }
+
+  const card = { background: 'white', borderRadius: '16px', border: '1px solid #F0F0F5', padding: '24px' };
+  const th = { padding: '12px 16px', textAlign: 'left' as const, fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase' as const, letterSpacing: '0.05em', borderBottom: '1px solid #F0F0F5' };
+  const td = { padding: '13px 16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #F9FAFB' };
+  const inp = { padding: '9px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '13px', outline: 'none', background: 'white' };
+  const tabBt = (t: Tab) => ({
+    padding: '9px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '14px',
+    background: tab === t ? '#4F46E5' : 'transparent',
+    color: tab === t ? 'white' : '#6B7280',
+  });
+
+  const TABS: { key: Tab; label: string; icon: any }[] = [
+    { key: 'overview', label: 'Overview', icon: TrendingUp },
+    { key: 'users', label: `Users (${stats?.total_users ?? 0})`, icon: Users },
+    { key: 'jobs', label: `Jobs (${stats?.total_jobs ?? 0})`, icon: Briefcase },
+    { key: 'applications', label: `Applications (${stats?.total_applications ?? 0})`, icon: FileText },
+  ];
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
-          {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-          {toast.msg}
-        </div>
-      )}
+    <div style={{ background: '#F9FAFB', minHeight: '100vh' }}>
 
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-              <p className="text-gray-500 text-sm mt-1">Manage jobs and applications</p>
+      <div style={{ background: 'white', borderBottom: '1px solid #F0F0F5', padding: '24px 0' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ width: '36px', height: '36px', background: '#FEF2F2', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Shield size={18} color="#DC2626" />
             </div>
-            <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-              <Plus size={18} /> Post a Job
-            </button>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            {[
-              { icon: Briefcase, label: 'Total Jobs', value: jobs.length },
-              { icon: Users, label: 'Applications', value: applications.length },
-              { icon: Briefcase, label: 'Featured', value: jobs.filter(j => j.is_featured).length },
-              { icon: Briefcase, label: 'Remote', value: jobs.filter(j => j.type === 'remote').length },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="bg-gray-50 rounded-xl p-4">
-                <div className="text-2xl font-bold text-primary">{value}</div>
-                <div className="text-sm text-gray-500 mt-0.5">{label}</div>
-              </div>
-            ))}
+            <div>
+              <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A2E' }}>Admin Panel</h1>
+              <p style={{ fontSize: '13px', color: '#9CA3AF' }}>Full platform control</p>
+            </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-0 mt-6 border-b -mb-px">
-            {(['jobs', 'applications'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-5 py-2.5 text-sm font-medium capitalize border-b-2 transition-colors ${
-                  tab === t ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                {t}
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {TABS.map(({ key, label, icon: Icon }) => (
+              <button key={key} onClick={() => setTab(key)} style={tabBt(key)}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icon size={14} /> {label}
+                </span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 size={32} className="text-primary animate-spin" />
-          </div>
-        ) : tab === 'jobs' ? (
-          <div className="space-y-3">
-            {jobs.length === 0 ? (
-              <div className="text-center py-16 text-gray-500">
-                <Briefcase size={40} className="mx-auto mb-3 text-gray-300" />
-                <p>No jobs yet. Create your first one!</p>
-              </div>
-            ) : jobs.map(job => (
-              <div key={job.id} className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-4 hover:shadow-sm transition-shadow">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${getCompanyColor(job.company)}`}>
-                  {getCompanyInitials(job.company)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-gray-900 truncate">{job.title}</span>
-                    {job.is_featured && <span className="badge bg-amber-50 text-amber-700">Featured</span>}
-                  </div>
-                  <div className="text-sm text-gray-400 mt-0.5">
-                    {job.company} · {job.location} · {JOB_TYPES[job.type]}
-                    · {formatSalary(job.salary_min, job.salary_max)}
-                    · <span className="text-gray-400">{formatDate(job.created_at)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Link href={`/jobs/${job.id}`} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="View">
-                    <Eye size={16} />
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(job.id)}
-                    disabled={deletingId === job.id}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    {deletingId === job.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {applications.length === 0 ? (
-              <div className="text-center py-16 text-gray-500">
-                <Users size={40} className="mx-auto mb-3 text-gray-300" />
-                <p>No applications yet.</p>
-              </div>
-            ) : applications.map(app => (
-              <div key={app.id} className="bg-white border border-gray-100 rounded-xl p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-semibold text-gray-900">{app.name}</div>
-                    <div className="text-sm text-gray-500">{app.email}</div>
-                    {app.job && <div className="text-xs text-primary mt-1">{app.job.title} at {app.job.company}</div>}
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-xs text-gray-400">{formatDate(app.created_at)}</div>
-                    <a href={app.resume_link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline mt-1 block">
-                      View Resume →
-                    </a>
-                  </div>
-                </div>
-                {app.cover_note && (
-                  <p className="text-sm text-gray-500 mt-3 border-t pt-3 line-clamp-2">{app.cover_note}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ padding: '32px 16px' }}>
 
-      {/* Create Job Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="font-bold text-xl text-gray-900">Post a New Job</h2>
-              <button onClick={() => setShowForm(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X size={20} className="text-gray-500" />
-              </button>
+        {/* ── OVERVIEW ─────────────────────────────────────────── */}
+        {tab === 'overview' && stats && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              {[
+                { label: 'Total Users', value: stats.total_users, icon: Users, color: '#4F46E5', bg: '#EEF2FF' },
+                { label: 'Total Jobs', value: stats.total_jobs, icon: Briefcase, color: '#16A34A', bg: '#F0FDF4' },
+                { label: 'Applications', value: stats.total_applications, icon: FileText, color: '#2563EB', bg: '#EFF6FF' },
+                { label: 'Pending Review', value: stats.pending_apps, icon: Clock, color: '#D97706', bg: '#FFFBEB' },
+              ].map(({ label, value, icon: Icon, color, bg }) => (
+                <div key={label} style={card}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                    <Icon size={18} color={color} />
+                  </div>
+                  <div style={{ fontSize: '30px', fontWeight: 700, color: '#1A1A2E' }}>{value}</div>
+                  <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '2px' }}>{label}</div>
+                </div>
+              ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Job Title *</label>
-                  <input name="title" value={form.title} onChange={handleFormChange} className={`input ${formErrors.title ? 'border-red-300' : ''}`} placeholder="e.g. Senior Designer" />
-                  {formErrors.title && <p className="text-xs text-red-500 mt-1">{formErrors.title}</p>}
-                </div>
-                <div>
-                  <label className="label">Company *</label>
-                  <input name="company" value={form.company} onChange={handleFormChange} className={`input ${formErrors.company ? 'border-red-300' : ''}`} placeholder="e.g. Acme Inc." />
-                  {formErrors.company && <p className="text-xs text-red-500 mt-1">{formErrors.company}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Location *</label>
-                  <input name="location" value={form.location} onChange={handleFormChange} className={`input ${formErrors.location ? 'border-red-300' : ''}`} placeholder="e.g. Remote, New York" />
-                  {formErrors.location && <p className="text-xs text-red-500 mt-1">{formErrors.location}</p>}
-                </div>
-                <div>
-                  <label className="label">Category *</label>
-                  <div className="relative">
-                    <select name="category" value={form.category} onChange={handleFormChange} className={`input appearance-none pr-8 ${formErrors.category ? 'border-red-300' : ''}`}>
-                      <option value="">Select category</option>
-                      {JOB_CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* User breakdown */}
+              <div style={card}>
+                <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#1A1A2E', marginBottom: '16px' }}>User Breakdown</h3>
+                {[
+                  { role: 'Seekers', value: stats.total_seekers, color: '#4F46E5' },
+                  { role: 'Employers', value: stats.total_employers, color: '#16A34A' },
+                  { role: 'Admins', value: stats.total_users - stats.total_seekers - stats.total_employers, color: '#DC2626' },
+                ].map(({ role, value, color }) => (
+                  <div key={role} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '14px', color: '#6B7280' }}>{role}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '120px', height: '6px', background: '#F0F0F5', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.round((value / stats.total_users) * 100)}%`, background: color, borderRadius: '999px' }} />
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A2E', minWidth: '24px', textAlign: 'right' }}>{value}</span>
+                    </div>
                   </div>
-                  {formErrors.category && <p className="text-xs text-red-500 mt-1">{formErrors.category}</p>}
-                </div>
+                ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="label">Job Type</label>
-                  <div className="relative">
-                    <select name="type" value={form.type} onChange={handleFormChange} className="input appearance-none pr-8">
-                      {Object.entries(JOB_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              {/* Application breakdown */}
+              <div style={card}>
+                <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#1A1A2E', marginBottom: '16px' }}>Application Status</h3>
+                {[
+                  { label: 'Pending', value: stats.pending_apps, color: '#D97706' },
+                  { label: 'Accepted', value: stats.accepted_apps, color: '#16A34A' },
+                  { label: 'Others', value: stats.total_applications - stats.pending_apps - stats.accepted_apps, color: '#9CA3AF' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '14px', color: '#6B7280' }}>{label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '120px', height: '6px', background: '#F0F0F5', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${stats.total_applications ? Math.round((value / stats.total_applications) * 100) : 0}%`, background: color, borderRadius: '999px' }} />
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A2E', minWidth: '24px', textAlign: 'right' }}>{value}</span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="label">Salary Min ($)</label>
-                  <input name="salary_min" type="number" value={form.salary_min} onChange={handleFormChange} className="input" placeholder="e.g. 80000" />
-                </div>
-                <div>
-                  <label className="label">Salary Max ($)</label>
-                  <input name="salary_max" type="number" value={form.salary_max} onChange={handleFormChange} className="input" placeholder="e.g. 120000" />
-                </div>
+                ))}
               </div>
-
-              <div>
-                <label className="label">Description *</label>
-                <textarea name="description" value={form.description} onChange={handleFormChange} rows={5} className={`input resize-none ${formErrors.description ? 'border-red-300' : ''}`} placeholder="Describe the role, responsibilities, and what you're looking for..." />
-                {formErrors.description && <p className="text-xs text-red-500 mt-1">{formErrors.description}</p>}
-              </div>
-
-              <div>
-                <label className="label">Requirements (one per line)</label>
-                <textarea name="requirements" value={form.requirements} onChange={handleFormChange} rows={4} className="input resize-none" placeholder="5+ years of experience&#10;Proficiency in React&#10;Strong communication skills" />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="is_featured" name="is_featured" checked={form.is_featured} onChange={handleFormChange} className="w-4 h-4 text-primary" />
-                <label htmlFor="is_featured" className="text-sm font-medium text-gray-700">Mark as Featured job</label>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 btn-outline">Cancel</button>
-                <button type="submit" disabled={submitting} className="flex-1 btn-primary flex items-center justify-center gap-2">
-                  {submitting && <Loader2 size={16} className="animate-spin" />}
-                  {submitting ? 'Creating...' : 'Create Job'}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* ── USERS ────────────────────────────────────────────── */}
+        {tab === 'users' && (
+          <div style={card}>
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                <input value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder="Search by name or email..." style={{ ...inp, paddingLeft: '34px', width: '100%', boxSizing: 'border-box' }} />
+              </div>
+              <select value={userRole} onChange={e => setUserRole(e.target.value)} style={{ ...inp, minWidth: '140px' }}>
+                <option value="">All Roles</option>
+                <option value="seeker">Seeker</option>
+                <option value="employer">Employer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>{['User', 'Role', 'Jobs Posted', 'Applications', 'Joined', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {users.map(u => {
+                  const rc = ROLE_CONFIG[u.role as keyof typeof ROLE_CONFIG] || ROLE_CONFIG.seeker;
+                  return (
+                    <tr key={u.id} className="hover:bg-gray-50">
+                      <td style={td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: 'white' }}>{u.name[0].toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A2E' }}>{u.name}</div>
+                            <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={td}>
+                        <select
+                          value={u.role}
+                          disabled={updatingRole === u.id || u.id === user?.id}
+                          onChange={e => handleRoleChange(u.id, e.target.value)}
+                          style={{ fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '999px', border: 'none', background: rc.bg, color: rc.color, cursor: 'pointer', outline: 'none' }}
+                        >
+                          <option value="seeker">Seeker</option>
+                          <option value="employer">Employer</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
+                      <td style={td}>{u.job_listings_count ?? 0}</td>
+                      <td style={td}>{u.applications_count ?? 0}</td>
+                      <td style={{ ...td, color: '#9CA3AF' }}>{formatDate(u.created_at)}</td>
+                      <td style={td}>
+                        {u.id !== user?.id && u.role !== 'admin' && (
+                          <button onClick={() => handleDeleteUser(u.id)} disabled={deletingUser === u.id} style={{ padding: '6px', borderRadius: '7px', border: '1px solid #FEE2E2', background: '#FEF2F2', cursor: 'pointer', display: 'flex' }}>
+                            <Trash2 size={14} color="#DC2626" />
+                          </button>
+                        )}
+                        {u.id === user?.id && <span style={{ fontSize: '12px', color: '#9CA3AF' }}>You</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {users.length === 0 && <p style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF', fontSize: '14px' }}>No users found.</p>}
+          </div>
+        )}
+
+        {/* ── JOBS ─────────────────────────────────────────────── */}
+        {tab === 'jobs' && (
+          <div style={card}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                <input value={jobSearch} onChange={e => setJobSearch(e.target.value)} placeholder="Search by title or company..." style={{ ...inp, paddingLeft: '34px', width: '100%', boxSizing: 'border-box' }} />
+              </div>
+              <select value={jobStatus} onChange={e => setJobStatus(e.target.value)} style={{ ...inp, minWidth: '140px' }}>
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>{['Job', 'Type', 'Applicants', 'Posted', 'Status', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {jobs.map(job => (
+                  <tr key={job.id} className="hover:bg-gray-50">
+                    <td style={td}>
+                      <div style={{ fontWeight: 600, color: '#1A1A2E' }}>{job.title}</div>
+                      <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{job.company} · {job.location}</div>
+                    </td>
+                    <td style={td}>
+                      <span style={{ fontSize: '12px', fontWeight: 500, background: '#EEF2FF', color: '#4F46E5', padding: '3px 10px', borderRadius: '999px' }}>{JOB_TYPES[job.type] || job.type}</span>
+                    </td>
+                    <td style={td}>{job.applications_count ?? 0}</td>
+                    <td style={{ ...td, color: '#9CA3AF' }}>{formatDate(job.created_at)}</td>
+                    <td style={td}>
+                      <button onClick={() => handleToggleJob(job)} disabled={togglingJob === job.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', color: job.is_active ? '#16A34A' : '#9CA3AF', padding: 0 }}>
+                        {job.is_active ? <ToggleRight size={18} color="#16A34A" /> : <ToggleLeft size={18} color="#9CA3AF" />}
+                        {job.is_active ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
+                    <td style={td}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <Link href={`/jobs/${job.id}`} style={{ padding: '6px', borderRadius: '7px', border: '1px solid #E5E7EB', background: 'white', display: 'flex' }} title="View">
+                          <Eye size={14} color="#6B7280" />
+                        </Link>
+                        <button onClick={() => handleDeleteJob(job.id)} disabled={deletingJob === job.id} style={{ padding: '6px', borderRadius: '7px', border: '1px solid #FEE2E2', background: '#FEF2F2', cursor: 'pointer', display: 'flex' }}>
+                          <Trash2 size={14} color="#DC2626" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {jobs.length === 0 && <p style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF', fontSize: '14px' }}>No jobs found.</p>}
+          </div>
+        )}
+
+        {/* ── APPLICATIONS ─────────────────────────────────────── */}
+        {tab === 'applications' && (
+          <div style={card}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <select value={appStatus} onChange={e => setAppStatus(e.target.value)} style={{ ...inp, minWidth: '160px' }}>
+                <option value="">All Statuses</option>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <span style={{ fontSize: '13px', color: '#9CA3AF', alignSelf: 'center' }}>{apps.length} results</span>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>{['Applicant', 'Job', 'Status', 'Applied', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {apps.map(app => {
+                  const sc = STATUS_CONFIG[app.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
+                  const Icon = sc.icon;
+                  return (
+                    <tr key={app.id} className="hover:bg-gray-50">
+                      <td style={td}>
+                        <div style={{ fontWeight: 600, color: '#1A1A2E' }}>{app.name}</div>
+                        <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{app.email}</div>
+                      </td>
+                      <td style={td}>
+                        {app.job ? (
+                          <div>
+                            <Link href={`/jobs/${app.job_id}`} style={{ fontWeight: 500, color: '#4F46E5', textDecoration: 'none', fontSize: '13px' }}>{app.job.title}</Link>
+                            <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{app.job.company}</div>
+                          </div>
+                        ) : <span style={{ color: '#9CA3AF', fontSize: '13px' }}>—</span>}
+                      </td>
+                      <td style={td}>
+                        <select
+                          value={app.status}
+                          disabled={updatingApp === app.id}
+                          onChange={e => handleAppStatus(app.id, e.target.value)}
+                          style={{ fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '999px', border: 'none', background: sc.bg, color: sc.color, cursor: 'pointer', outline: 'none' }}
+                        >
+                          {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                      </td>
+                      <td style={{ ...td, color: '#9CA3AF' }}>{formatDate(app.created_at)}</td>
+                      <td style={td}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <a href={app.resume_link} target="_blank" rel="noopener noreferrer" style={{ padding: '6px', borderRadius: '7px', border: '1px solid #E5E7EB', background: 'white', display: 'flex' }} title="Resume">
+                            <Eye size={14} color="#6B7280" />
+                          </a>
+                          <button onClick={() => handleDeleteApp(app.id)} disabled={deletingApp === app.id} style={{ padding: '6px', borderRadius: '7px', border: '1px solid #FEE2E2', background: '#FEF2F2', cursor: 'pointer', display: 'flex' }}>
+                            <Trash2 size={14} color="#DC2626" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {apps.length === 0 && <p style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF', fontSize: '14px' }}>No applications found.</p>}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }

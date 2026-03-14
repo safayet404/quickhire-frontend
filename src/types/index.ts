@@ -1,5 +1,6 @@
 export interface Job {
   id: number;
+  user_id?: number;
   title: string;
   company: string;
   company_logo?: string;
@@ -20,12 +21,33 @@ export interface Job {
 export interface Application {
   id: number;
   job_id: number;
+  user_id?: number;
   name: string;
   email: string;
   resume_link: string;
   cover_note?: string;
+  status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
+  status_note?: string;
+  status_color?: string;
   created_at: string;
   job?: Job;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    seeker_profile?: {
+      headline?: string;
+      location?: string;
+      skills?: string[];
+    };
+  };
+}
+
+export interface EmployerStats {
+  totalJobs: number;
+  activeJobs: number;
+  totalApplicants: number;
+  pendingReview: number;
 }
 
 export interface PaginationMeta {
@@ -49,28 +71,22 @@ export interface Category {
 }
 
 export const JOB_CATEGORIES = [
-  { name: 'Design', icon: '🎨' },
-  { name: 'Technology', icon: '💻' },
-  { name: 'Marketing', icon: '📣' },
-  { name: 'Finance', icon: '📊' },
-  { name: 'Human Resource', icon: '👥' },
-  { name: 'Engineering', icon: '⚙️' },
-  { name: 'Sales', icon: '🤝' },
-  { name: 'Healthcare', icon: '🏥' },
+  'Design', 'Technology', 'Marketing', 'Finance',
+  'Human Resource', 'Engineering', 'Sales', 'Healthcare', 'Business', 'Other',
 ];
 
 export const JOB_TYPES: Record<string, string> = {
-  'full-time': 'Full Time',
-  'part-time': 'Part Time',
-  'remote': 'Remote',
-  'contract': 'Contract',
+  'full-time':  'Full Time',
+  'part-time':  'Part Time',
+  'remote':     'Remote',
+  'contract':   'Contract',
   'internship': 'Internship',
 };
 
 export const JOB_TYPE_COLORS: Record<string, string> = {
-  'full-time': 'bg-blue-50 text-blue-700',
-  'part-time': 'bg-purple-50 text-purple-700',
-  'remote': 'bg-green-50 text-green-700',
-  'contract': 'bg-orange-50 text-orange-700',
+  'full-time':  'bg-blue-50 text-blue-700',
+  'part-time':  'bg-purple-50 text-purple-700',
+  'remote':     'bg-green-50 text-green-700',
+  'contract':   'bg-orange-50 text-orange-700',
   'internship': 'bg-pink-50 text-pink-700',
 };

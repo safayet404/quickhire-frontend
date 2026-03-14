@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Job, JOB_TYPES, JOB_TYPE_COLORS } from '@/types';
 import { formatSalary, formatDate, getCompanyInitials, getCompanyColor } from '@/lib/utils';
+import BookmarkButton from '@/components/jobs/BookmarkButton';
 
 interface JobCardProps {
   job: Job;
@@ -37,23 +38,28 @@ export default function JobCard({ job, featured }: JobCardProps) {
         }}
         className="hover:shadow-md"
       >
-        {/* Row 1: Logo + Type badge */}
+        {/* Row 1: Logo + Type badge + Bookmark */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${getCompanyColor(job.company)}`}>
             {getCompanyInitials(job.company)}
           </div>
-          <span style={{
-            fontSize: '12px',
-            fontWeight: 500,
-            padding: '4px 12px',
-            borderRadius: '6px',
-            border: '1.5px solid #4F46E5',
-            color: '#4F46E5',
-            background: 'white',
-            whiteSpace: 'nowrap',
-          }}>
-            {typeLabel}
-          </span>
+
+          {/* Right side: type badge + bookmark button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '4px 12px',
+              borderRadius: '6px',
+              border: '1.5px solid #4F46E5',
+              color: '#4F46E5',
+              background: 'white',
+              whiteSpace: 'nowrap',
+            }}>
+              {typeLabel}
+            </span>
+            <BookmarkButton jobId={job.id} size={16} />
+          </div>
         </div>
 
         {/* Row 2: Title */}
@@ -64,9 +70,7 @@ export default function JobCard({ job, featured }: JobCardProps) {
         {/* Row 3: Company • Location */}
         <div style={{ fontSize: '13px', color: '#9CA3AF' }}>
           {job.company}
-          {job.location ? (
-            <span> &nbsp;·&nbsp; {job.location}</span>
-          ) : null}
+          {job.location ? <span> &nbsp;·&nbsp; {job.location}</span> : null}
         </div>
 
         {/* Row 4: Description */}
@@ -84,30 +88,17 @@ export default function JobCard({ job, featured }: JobCardProps) {
           {job.company} is looking for {job.title} {job.description?.slice(0, 60)}...
         </p>
 
-        {/* Row 5: Category tag pills */}
+        {/* Row 5: Pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
-          {/* Job type pill */}
           <span style={{
-            fontSize: '11px',
-            fontWeight: 500,
-            padding: '3px 10px',
-            borderRadius: '999px',
-            background: '#FFF7ED',
-            color: '#C2621B',
-            border: '1px solid #FDE68A',
+            fontSize: '11px', fontWeight: 500, padding: '3px 10px', borderRadius: '999px',
+            background: '#FFF7ED', color: '#C2621B', border: '1px solid #FDE68A',
           }}>
             {typeLabel}
           </span>
-
-          {/* Category pill */}
           <span style={{
-            fontSize: '11px',
-            fontWeight: 500,
-            padding: '3px 10px',
-            borderRadius: '999px',
-            background: catStyle.bg,
-            color: catStyle.text,
-            border: `1px solid ${catStyle.border}`,
+            fontSize: '11px', fontWeight: 500, padding: '3px 10px', borderRadius: '999px',
+            background: catStyle.bg, color: catStyle.text, border: `1px solid ${catStyle.border}`,
           }}>
             {job.category}
           </span>

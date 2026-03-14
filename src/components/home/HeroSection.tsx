@@ -45,9 +45,13 @@ export default function HeroSection() {
               Discover<br />more than<br />
               <span style={{ color: '#26A4FF', position: 'relative', display: 'inline-block' }}>
                 5000+ Jobs
-                <svg style={{ position: 'absolute', bottom: '-6px', left: 0, width: '100%' }} height="10" viewBox="0 0 260 10" fill="none">
+                <svg style={{ position: 'absolute', bottom: '-6px', left: 0, width: '100%' }} height="11" viewBox="0 0 260 10" fill="none">
                   <path d="M2 7 C40 2, 100 9, 160 5 C200 2, 230 8, 258 4" stroke="#26A4FF" strokeWidth="3.5" strokeLinecap="round" fill="none" />
                 </svg>
+                <svg style={{ position: 'absolute', bottom: '-12px', left: 0, width: '100%' }} height="12" viewBox="0 0 260 10" fill="none">
+                  <path d="M2 7 C40 2, 100 9, 160 5 C200 2, 230 8, 258 4" stroke="#26A4FF" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+                </svg>
+
               </span>
             </h1>
 

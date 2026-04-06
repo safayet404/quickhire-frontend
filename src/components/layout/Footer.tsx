@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { Facebook, Instagram, AtSign, Linkedin, Twitter } from 'lucide-react';
+import { Facebook, Instagram, AtSign, Linkedin, Twitter, Briefcase } from 'lucide-react';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -17,10 +17,19 @@ export default function Footer() {
 
           {/* Brand */}
           <div>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
+            {/* <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', marginBottom: '16px' }}>
               <Image src="/logo.png" alt="QuickHire" width={30} height={30} style={{ borderRadius: '50%' }} />
               <span style={{ fontWeight: 700, fontSize: '17px', color: 'white' }}>
                 Quick<span style={{ color: '#4F46E5' }}>Hire</span>
+              </span>
+            </Link> */}
+
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <div style={{ width: '34px', height: '34px', background: '#4F46E5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Briefcase size={17} color="white" />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: '17px', color: 'white' }}>
+                Job<span style={{ color: '#4F46E5' }}>Vault</span>
               </span>
             </Link>
             <p style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.7, maxWidth: '220px' }}>

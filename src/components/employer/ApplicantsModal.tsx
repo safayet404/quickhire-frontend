@@ -8,7 +8,7 @@ import { Job, Application } from '@/types';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const STATUS_CONFIG = {
-  pending:  { label: 'Pending',  color: '#D97706', bg: '#FFFBEB', icon: Clock },
+  pending: { label: 'Pending', color: '#D97706', bg: '#FFFBEB', icon: Clock },
   reviewed: { label: 'Reviewed', color: '#2563EB', bg: '#EFF6FF', icon: Eye },
   accepted: { label: 'Accepted', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle },
   rejected: { label: 'Rejected', color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
@@ -22,10 +22,10 @@ interface Props {
 
 export default function ApplicantsModal({ token, job, onClose }: Props) {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [updatingId, setUpdatingId]     = useState<number | null>(null);
-  const [noteFor, setNoteFor]           = useState<number | null>(null);
-  const [noteText, setNoteText]         = useState('');
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [noteFor, setNoteFor] = useState<number | null>(null);
+  const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
     axios.get(`${API}/employer/jobs/${job.id}/applications`, {
